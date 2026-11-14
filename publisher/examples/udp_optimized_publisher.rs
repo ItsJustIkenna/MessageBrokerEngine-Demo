@@ -31,7 +31,7 @@ impl Default for UdpPublisherConfig {
             enable_broadcast: false,
             buffer_size: 65536,
             batch_size: 100,
-            flush_interval_us: 10, // 10 microseconds for ultra-low latency
+            flush_interval_us: 10, // 10 microseconds for low latency
         }
     }
 }

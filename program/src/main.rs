@@ -96,7 +96,7 @@ macro_rules! perf_info {
     }};
 }
 
-// Simplified ultra-fast message structures for Phase 1 integration
+// Simplified message structures for Phase 1 integration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UltraMessage {
     pub topic: String,
@@ -220,7 +220,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let demo_start = Instant::now();
     let mut message_count = 0u64;
     
-    // Send burst of messages to test ultra-fast processing
+    // Send burst of messages to test processing
     for _ in 0..1000 {
         for (topic, payload) in &demo_messages {
             let ultra_message = UltraMessage::critical(

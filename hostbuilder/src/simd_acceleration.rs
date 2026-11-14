@@ -1,4 +1,4 @@
-// SIMD acceleration for ultra-high performance message processing
+// SIMD acceleration for message processing
 // Provides 2-4x speedup for batch operations using AVX2/AVX-512
 
 #[cfg(target_arch = "x86_64")]
@@ -78,7 +78,7 @@ unsafe fn copy_sse2(src: &[u8], dst: &mut [u8], len: usize) -> usize {
 }
 
 /// Compute checksum using SIMD (AVX2)
-/// 4-8x faster than scalar for large buffers
+/// 
 #[inline(always)]
 pub fn checksum_simd(data: &[u8]) -> u64 {
     #[cfg(all(target_arch = "x86_64", target_feature = "avx2"))]

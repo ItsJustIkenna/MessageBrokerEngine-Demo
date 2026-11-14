@@ -1,5 +1,5 @@
 // ULTRA-FAST Order Management System - Fixed Implementation
-// Target: <100μs (vs 544μs baseline = 80%+ improvement)
+// Example order-management path (no measured figure claimed here)
 
 use std::time::{Duration, Instant};
 use std::collections::HashMap;
@@ -7,7 +7,7 @@ use std::sync::atomic::{AtomicU64, AtomicBool, Ordering};
 use tracing::{info, Level};
 use serde::{Serialize, Deserialize};
 
-// Simplified ultra-fast types
+// Simplified types
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TradingSignal {
     pub symbol: String,
@@ -41,7 +41,7 @@ pub struct UltraFastOrderManager {
     // Pre-allocated order sequence
     order_sequence: AtomicU64,
     
-    // Ultra-fast risk limits (array lookup)
+    // Risk limits (array lookup)
     position_limits: [f64; 32],      // Max 32 symbols
     current_positions: [AtomicU64; 32], // Fixed-point representation
     
@@ -59,7 +59,7 @@ impl UltraFastOrderManager {
     pub fn new() -> Self {
         info!("🚀 Initializing ULTRA-FAST Order Manager");
         
-        // Pre-map symbols to IDs for ultra-fast lookup
+        // Pre-map symbols to IDs for lookup
         let mut symbol_to_id = HashMap::new();
         let symbols = vec!["BTC-USD", "ETH-USD", "SOL-USD", "AVAX-USD", "BTC-ETH"];
         
@@ -93,7 +93,7 @@ impl UltraFastOrderManager {
         }
     }
 
-    /// ULTRA-FAST order creation - TARGET: <100μs
+    /// Order creation
     pub fn create_ultra_fast_order(&self, signal: &TradingSignal) -> Result<(UltraFastOrder, Duration), &'static str> {
         let start_time = Instant::now();
 
@@ -158,7 +158,7 @@ impl UltraFastOrderManager {
 
     #[inline(always)]
     fn ultra_fast_submit(&self, _order: &UltraFastOrder) {
-        // Simulate ultra-fast order submission
+        // Simulate order submission
         // Real implementation would use:
         // - Kernel bypass networking (DPDK)
         // - Pre-established connections

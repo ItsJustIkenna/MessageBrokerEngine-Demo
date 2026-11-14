@@ -1,4 +1,4 @@
-// Ultra-high performance topic manager for sub-microsecond latency
+// Topic manager for low latency
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, AtomicUsize, AtomicBool, Ordering};
@@ -40,7 +40,7 @@ macro_rules! uf_debug {
 
 use protocol::broker::messages::publish_request::Payload;
 
-// Constants for ultra-low latency
+// Constants for low latency
 const MAX_TOPICS: usize = 10000;              // Maximum number of topics
 const MAX_SUBSCRIBERS_PER_TOPIC: usize = 1000; // Max subscribers per topic
 const TOPIC_NAME_SIZE: usize = 128;           // Fixed topic name size
@@ -281,7 +281,7 @@ pub struct SubscriberStats {
     pub topic_count: usize,
 }
 
-// Ultra-fast topic with lock-free subscriber management
+// Topic with lock-free subscriber management
 pub struct UltraFastTopic {
     name: FixedTopicName,
     subscribers: RwLock<Vec<Arc<UltraFastSubscriber>>>,
@@ -421,7 +421,7 @@ pub struct TopicStats {
     pub last_message_time: u64,
 }
 
-// Ultra-fast topic manager trait
+// Topic manager trait
 #[automock]
 #[async_trait]
 pub trait TopicManagerTrait {
@@ -432,7 +432,7 @@ pub trait TopicManagerTrait {
     async fn cleanup_inactive(&self) -> usize;
 }
 
-// Ultra-high performance topic manager
+// Topic manager
 pub struct TopicManager {
     topics: RwLock<HashMap<u64, Arc<UltraFastTopic>>>, // Hash -> Topic mapping
     topic_names: RwLock<HashMap<String, u64>>,         // Name -> Hash mapping

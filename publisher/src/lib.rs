@@ -1,4 +1,4 @@
-// Ultra-high performance publisher for sub-microsecond latency
+// Publisher for low latency
 use std::sync::atomic::{AtomicU64, AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
@@ -28,7 +28,7 @@ pub mod memory_optimization;
 pub use memory_optimization::{MessageBufferPool, PoolConfig, ZeroCopyMessageBuilder};
 pub use cpu_optimization::{CpuOptimizer, CpuAffinityConfig, CpuAffinityError};
 
-/// Cross-platform timestamp function optimized for ultra-low latency
+/// Cross-platform timestamp function optimized for low latency
 #[cfg(target_arch = "x86_64")]
 #[inline(always)]
 fn get_rdtsc() -> u64 {
@@ -55,7 +55,7 @@ fn get_rdtsc() -> u64 {
         .as_nanos() as u64
 }
 
-// Ultra-fast error types for zero-allocation error handling
+// Error types for zero-allocation error handling
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum UltraFastError {
     QueueFull,
@@ -68,7 +68,7 @@ pub enum UltraFastError {
     BufferTooSmall,
 }
 
-// Message priority for ultra-fast routing
+// Message priority for routing
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum MessagePriority {
     Low = 0,
@@ -77,7 +77,7 @@ pub enum MessagePriority {
     Critical = 3,
 }
 
-// Performance statistics for monitoring ultra-low latency
+// Performance statistics
 #[derive(Default)]
 pub struct PerformanceStats {
     messages_sent: AtomicU64,
@@ -171,7 +171,7 @@ pub struct PendingMessage {
     pub sequence: u64,
 }
 
-// Publisher configuration for ultra-high performance
+// Publisher configuration
 #[derive(Clone)]
 pub struct PublisherConfig {
     pub broker_address: String,
@@ -251,7 +251,7 @@ impl Default for PublisherConfig {
     }
 }
 
-// Main ultra-high performance publisher
+// Main publisher
 pub struct UltraFastPublisher {
     config: PublisherConfig,
     connection: Arc<tokio::sync::RwLock<Option<TcpStream>>>,
@@ -310,7 +310,7 @@ impl UltraFastPublisher {
         .map_err(|_| UltraFastError::Timeout)?
         .map_err(|_| UltraFastError::ConnectionFailed)?;
 
-        // Configure socket for ultra-low latency
+        // Configure socket for low latency
         if let Err(e) = stream.set_nodelay(self.config.tcp_nodelay) {
             log_warn!(PUBLISHER_LOGGER, "Failed to set TCP_NODELAY: {}", e);
         }

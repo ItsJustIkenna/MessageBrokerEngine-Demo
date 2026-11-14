@@ -1,4 +1,4 @@
-// Memory optimization for ultra-low latency publishing
+// Memory optimization for low-latency publishing
 // Implements memory pool and zero-copy recommendations from latency profiling
 
 use std::sync::Arc;

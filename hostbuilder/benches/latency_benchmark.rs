@@ -24,7 +24,7 @@ impl Message {
     }
 }
 
-// Ultra-fast timestamp function (same as production)
+// Timestamp function (same as production)
 #[cfg(target_arch = "x86_64")]
 #[inline(always)]
 fn get_timestamp() -> u64 {

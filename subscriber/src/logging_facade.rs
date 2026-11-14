@@ -84,7 +84,7 @@ pub static MESSAGE_LOGGER: once_cell::sync::Lazy<Arc<UltraLogger>> =
 macro_rules! log_info_sync {
     ($logger:expr, $fmt:expr $(, $arg:expr)*) => {{
         let msg = format!($fmt $(, $arg)*);
-        // For ultra-low latency, just print to stderr in sync context
+        // If no async runtime is available, just print to stderr in sync context
         eprintln!("[INFO] {}", msg);
     }};
 }

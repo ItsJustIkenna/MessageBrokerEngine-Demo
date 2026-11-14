@@ -1,4 +1,4 @@
-// Ultra-high performance message broker host - ENHANCED VERSION
+// Message broker host - ENHANCED VERSION
 // All optimizations, shared memory, lock-free structures, and performance tuning in one file
 
 use std::sync::Arc;
@@ -21,7 +21,7 @@ pub use tcp_optimization::{TcpOptimizationConfig, create_optimized_socket, optim
 pub use simd_acceleration::{copy_batch_simd, checksum_simd, zero_memory_simd, compare_simd};
 pub use huge_pages::{HugePageConfig, HugePageAllocator, allocate_huge_page_buffer, huge_pages_available};
 
-// Cross-platform ultra-fast timestamp function
+// Cross-platform timestamp function
 #[cfg(target_arch = "x86_64")]
 #[inline(always)]
 fn get_rdtsc() -> u64 {
@@ -56,7 +56,7 @@ const READ_BUFFER_SIZE: usize = 1048576;      // 1MB
 const MAX_MESSAGE_SIZE: usize = 16777216;     // 16MB
 const RING_BUFFER_CAPACITY: usize = 65536;    // Must be power of 2
 
-// Ultra-fast error types
+// Error types
 #[derive(Debug, Clone)]
 pub enum BrokerError {
     ConnectionFailed,
@@ -136,7 +136,7 @@ impl Clone for BrokerConfig {
     }
 }
 
-// Lock-free metrics for ultra-fast performance tracking
+// Lock-free metrics for performance tracking
 // Cache-line aligned to prevent false sharing (64-byte cache lines on x86_64)
 #[repr(align(64))]
 #[derive(Debug)]
@@ -322,7 +322,7 @@ impl Default for BrokerConfig {
     }
 }
 
-// Ultra-fast connection tracking
+// Connection tracking
 #[derive(Debug)]
 pub struct Connection {
     id: u64,
@@ -354,7 +354,7 @@ impl Connection {
     }
 }
 
-// Ultra-high performance message broker host with enhancements
+// Message broker host with enhancements
 pub struct MessageBrokerHost {
     config: BrokerConfig,
     metrics: Arc<UltraFastMetrics>,
