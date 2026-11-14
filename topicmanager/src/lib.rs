@@ -113,7 +113,7 @@ impl FixedTopicName {
 }
 
 #[derive(Debug)]
-pub struct UltraFastSubscriber {
+pub struct CoreSubscriber {
     id: u64,
     stream: Arc<tokio::sync::Mutex<TcpStream>>,
     last_heartbeat: CachePadded<AtomicU64>,
@@ -122,7 +122,7 @@ pub struct UltraFastSubscriber {
     is_active: AtomicBool,
 }
 
-impl UltraFastSubscriber {
+impl CoreSubscriber {
     pub fn new(id: u64, stream: TcpStream) -> Self {
         Self {
             id,
@@ -174,9 +174,9 @@ impl UltraFastSubscriber {
 }
 
 #[derive(Debug)]
-pub struct UltraFastTopic {
+pub struct ManagedTopic {
     name: FixedTopicName,
-    subscribers: RwLock<HashMap<u64, Arc<UltraFastSubscriber>>>,
+    subscribers: RwLock<HashMap<u64, Arc<CoreSubscriber>>>,
     message_queue: SegQueue<Payload>,
     messages_published: CachePadded<AtomicU64>,
     bytes_published: CachePadded<AtomicU64>,
@@ -184,7 +184,7 @@ pub struct UltraFastTopic {
     last_activity: CachePadded<AtomicU64>,
 }
 
-impl UltraFastTopic {
+impl ManagedTopic {
     pub fn new(name: FixedTopicName) -> Self {
         Self {
             name,
@@ -197,7 +197,7 @@ impl UltraFastTopic {
         }
     }
     
-    pub fn add_subscriber(&self, subscriber: Arc<UltraFastSubscriber>) {
+    pub fn add_subscriber(&self, subscriber: Arc<CoreSubscriber>) {
         let subscriber_id = subscriber.get_id();
         
         let mut subscribers = self.subscribers.write();
@@ -295,7 +295,7 @@ pub trait TopicManager: Send + Sync {
     async fn create_topic(&self, topic_name: &str) -> Result<(), Box<dyn std::error::Error + Send + Sync>>;
     async fn delete_topic(&self, topic_name: &str) -> Result<bool, Box<dyn std::error::Error + Send + Sync>>;
     async fn publish_to_topic(&self, topic_name: &str, payload: Payload) -> Result<(), Box<dyn std::error::Error + Send + Sync>>;
-    async fn subscribe_to_topic(&self, topic_name: &str, subscriber: Arc<UltraFastSubscriber>) -> Result<(), Box<dyn std::error::Error + Send + Sync>>;
+    async fn subscribe_to_topic(&self, topic_name: &str, subscriber: Arc<CoreSubscriber>) -> Result<(), Box<dyn std::error::Error + Send + Sync>>;
     async fn unsubscribe_from_topic(&self, topic_name: &str, subscriber_id: u64) -> Result<bool, Box<dyn std::error::Error + Send + Sync>>;
     async fn flush_all_topics(&self) -> u64;
     fn get_topic_count(&self) -> usize;
@@ -303,15 +303,15 @@ pub trait TopicManager: Send + Sync {
 }
 
 #[derive(Debug)]
-pub struct UltraFastTopicManager {
-    topics: RwLock<HashMap<u64, Arc<UltraFastTopic>>>,
+pub struct BrokerTopicManager {
+    topics: RwLock<HashMap<u64, Arc<ManagedTopic>>>,
     topic_count: CachePadded<AtomicUsize>,
     total_messages: CachePadded<AtomicU64>,
     total_bytes: CachePadded<AtomicU64>,
     next_subscriber_id: CachePadded<AtomicU64>,
 }
 
-impl UltraFastTopicManager {
+impl BrokerTopicManager {
     pub fn new() -> Self {
         Self {
             topics: RwLock::new(HashMap::with_capacity(MAX_TOPICS)),
@@ -345,7 +345,7 @@ impl UltraFastTopicManager {
 }
 
 #[async_trait]
-impl TopicManager for UltraFastTopicManager {
+impl TopicManager for BrokerTopicManager {
     async fn create_topic(&self, topic_name: &str) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let fixed_name = FixedTopicName::new(topic_name)
             .ok_or_else(|| format!("Topic name '{}' is too long", topic_name))?;
@@ -357,7 +357,7 @@ impl TopicManager for UltraFastTopicManager {
             return Err(format!("Topic '{}' already exists", topic_name).into());
         }
         
-        let topic = Arc::new(UltraFastTopic::new(fixed_name));
+        let topic = Arc::new(ManagedTopic::new(fixed_name));
         topics.insert(topic_hash, topic);
         self.topic_count.store(topics.len(), Ordering::Relaxed);
         
@@ -396,7 +396,7 @@ impl TopicManager for UltraFastTopicManager {
         }
     }
     
-    async fn subscribe_to_topic(&self, topic_name: &str, subscriber: Arc<UltraFastSubscriber>) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    async fn subscribe_to_topic(&self, topic_name: &str, subscriber: Arc<CoreSubscriber>) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let topic_hash = self.get_topic_hash(topic_name);
         if topic_hash == 0 {
             return Err(format!("Invalid topic name: '{}'", topic_name).into());
@@ -451,7 +451,7 @@ impl TopicManager for UltraFastTopicManager {
     }
 }
 
-impl Default for UltraFastTopicManager {
+impl Default for BrokerTopicManager {
     fn default() -> Self {
         Self::new()
     }
@@ -489,14 +489,14 @@ mod tests {
     
     #[tokio::test]
     async fn test_topic_manager_creation() {
-        let manager = UltraFastTopicManager::new();
+        let manager = BrokerTopicManager::new();
         assert_eq!(manager.get_topic_count(), 0);
         assert_eq!(manager.get_total_subscriber_count(), 0);
     }
     
     #[tokio::test]
     async fn test_create_and_delete_topic() {
-        let manager = UltraFastTopicManager::new();
+        let manager = BrokerTopicManager::new();
         
         // Create topic
         assert!(manager.create_topic("test").await.is_ok());

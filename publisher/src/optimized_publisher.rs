@@ -10,13 +10,13 @@ use tokio::io::AsyncWriteExt;
 use crossbeam::queue::SegQueue;
 
 use crate::{
-    UltraFastPublisher, UltraFastError, PublisherConfig, PendingMessage, 
+    CorePublisher, BrokerError, PublisherConfig, PendingMessage, 
     MessagePriority, PerformanceStats, get_rdtsc, logging_facade::PUBLISHER_LOGGER
 };
 
 /// Enhanced publisher with latency optimizations
 pub struct OptimizedPublisher {
-    inner: Arc<UltraFastPublisher>,
+    inner: Arc<CorePublisher>,
     background_flush_handle: Option<tokio::task::JoinHandle<()>>,
     flush_notify: Arc<Notify>,
     config: PublisherConfig,
@@ -144,7 +144,7 @@ impl BatchProcessor {
 
 impl OptimizedPublisher {
     pub fn new(config: PublisherConfig, batching_config: BatchingConfig) -> Self {
-        let inner = Arc::new(UltraFastPublisher::new(config.clone()));
+        let inner = Arc::new(CorePublisher::new(config.clone()));
         let batch_buffer = Arc::new(ParkingRwLock::new(Vec::with_capacity(batching_config.max_batch_size)));
         let performance_stats = Arc::new(PerformanceStats::new());
         
@@ -160,7 +160,7 @@ impl OptimizedPublisher {
     }
     
     /// Start the publisher with background processing
-    pub async fn start(&mut self) -> Result<(), UltraFastError> {
+    pub async fn start(&mut self) -> Result<(), BrokerError> {
         // Connect the inner publisher
         self.inner.connect().await?;
         
@@ -210,9 +210,9 @@ impl OptimizedPublisher {
     }
     
     /// Optimized publish with zero-copy batching
-    pub async fn publish_optimized(&self, data: Vec<u8>, topic: &str, priority: MessagePriority) -> Result<(), UltraFastError> {
+    pub async fn publish_optimized(&self, data: Vec<u8>, topic: &str, priority: MessagePriority) -> Result<(), BrokerError> {
         if !self.inner.is_connected() {
-            return Err(UltraFastError::ConnectionFailed);
+            return Err(BrokerError::ConnectionFailed);
         }
         
         let start_time = get_rdtsc();
@@ -250,10 +250,10 @@ impl OptimizedPublisher {
     
     /// High-performance batch flushing
     async fn flush_batch(
-        inner: &Arc<UltraFastPublisher>,
+        inner: &Arc<CorePublisher>,
         batch_buffer: &Arc<ParkingRwLock<Vec<PendingMessage>>>,
         stats: &Arc<PerformanceStats>
-    ) -> Result<(), UltraFastError> {
+    ) -> Result<(), BrokerError> {
         let messages_to_send = {
             let mut batch = batch_buffer.write();
             if batch.is_empty() {
@@ -296,17 +296,17 @@ impl OptimizedPublisher {
             // Single write call for entire batch
             if let Err(_) = stream.write_all(&batch_buffer).await {
                 inner.is_connected.store(false, Ordering::Relaxed);
-                return Err(UltraFastError::NetworkError);
+                return Err(BrokerError::NetworkError);
             }
             
             if let Err(_) = stream.flush().await {
                 inner.is_connected.store(false, Ordering::Relaxed);
-                return Err(UltraFastError::NetworkError);
+                return Err(BrokerError::NetworkError);
             }
             
             total_bytes = batch_buffer.len() as u64;
         } else {
-            return Err(UltraFastError::ConnectionFailed);
+            return Err(BrokerError::ConnectionFailed);
         }
         
         let batch_latency = get_rdtsc() - batch_start;
@@ -324,12 +324,12 @@ impl OptimizedPublisher {
     }
     
     /// Force immediate flush of all pending messages
-    pub async fn flush(&self) -> Result<(), UltraFastError> {
+    pub async fn flush(&self) -> Result<(), BrokerError> {
         Self::flush_batch(&self.inner, &self.batch_buffer, &self.performance_stats).await
     }
     
     /// Stop the publisher and background tasks
-    pub async fn stop(&mut self) -> Result<(), UltraFastError> {
+    pub async fn stop(&mut self) -> Result<(), BrokerError> {
         self.is_running.store(false, Ordering::Relaxed);
         
         // Flush any remaining messages

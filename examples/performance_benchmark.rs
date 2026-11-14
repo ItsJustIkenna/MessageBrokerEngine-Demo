@@ -29,7 +29,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n🎯 PERFORMANCE BENCHMARK GOALS");
     println!("==============================");
     println!("📈 Baseline Average Latency: {:.2}ms", baseline_latency_ms);
-    println!("🎯 Target Latency: <{:.2}ms (algorithmic trading)", target_improvement);
+    println!("This example's latency check threshold: <{:.2}ms", target_improvement);
     println!("📊 Expected Improvement: >95% latency reduction");
     println!("🚀 MessageBroker Bottleneck: 35% → <5%");
 
@@ -213,11 +213,11 @@ fn analyze_benchmark_results(
     // Performance classification
     println!("\n🏆 PERFORMANCE CLASSIFICATION:");
     if mean_latency < target_latency_ms {
-        println!("🏆 EXCELLENT - Target achieved! (<{:.1}ms)", target_latency_ms);
-        println!("✅ Suitable for high-frequency algorithmic trading");
+        println!("Within this example's target (<{:.1}ms)", target_latency_ms);
+        println!("This run is within the example's tightest latency check");
     } else if mean_latency < 1.0 {
-        println!("✅ VERY GOOD - Sub-millisecond latency achieved");
-        println!("✅ Suitable for most algorithmic trading strategies");
+        println!("Sub-millisecond latency in this run");
+        println!("This run is within the example's mid latency check");
     } else if mean_latency < 5.0 {
         println!("👍 GOOD - Significant improvement over baseline");
         println!("⚠️  May require additional optimization for HFT");

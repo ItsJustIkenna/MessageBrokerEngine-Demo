@@ -20,7 +20,7 @@ pub struct TradingSignal {
 }
 
 #[derive(Debug, Clone)]
-pub struct UltraFastOrder {
+pub struct ExampleOrder {
     pub id: u64,           // Use u64 instead of String for speed
     pub symbol_id: u8,     // Pre-mapped symbol IDs
     pub side: u8,          // 0=BUY, 1=SELL
@@ -32,7 +32,7 @@ pub struct UltraFastOrder {
 }
 
 #[derive(Debug)]
-pub struct UltraFastOrderManager {
+pub struct ExampleOrderManager {
     // Pre-computed symbol mappings for instant lookup
     symbol_to_id: HashMap<String, u8>,
     #[allow(dead_code)]
@@ -55,9 +55,9 @@ pub struct UltraFastOrderManager {
     max_time_ns: AtomicU64,
 }
 
-impl UltraFastOrderManager {
+impl ExampleOrderManager {
     pub fn new() -> Self {
-        info!("🚀 Initializing ULTRA-FAST Order Manager");
+        info!("Initializing order manager");
         
         // Pre-map symbols to IDs for lookup
         let mut symbol_to_id = HashMap::new();
@@ -77,7 +77,7 @@ impl UltraFastOrderManager {
         
         let current_positions: [AtomicU64; 32] = std::array::from_fn(|_| AtomicU64::new(0));
         
-        info!("✅ Ultra-fast order manager ready - <100μs target");
+        info!("Order manager ready");
         
         Self {
             symbol_to_id,
@@ -94,7 +94,7 @@ impl UltraFastOrderManager {
     }
 
     /// Order creation
-    pub fn create_ultra_fast_order(&self, signal: &TradingSignal) -> Result<(UltraFastOrder, Duration), &'static str> {
+    pub fn create_order(&self, signal: &TradingSignal) -> Result<(ExampleOrder, Duration), &'static str> {
         let start_time = Instant::now();
 
         // 1. LIGHTNING-FAST SYMBOL LOOKUP (~1μs)
@@ -129,7 +129,7 @@ impl UltraFastOrderManager {
         // 5. INSTANT ORDER CREATION (~10μs - no allocations!)
         let order_id = self.order_sequence.fetch_add(1, Ordering::Relaxed);
         
-        let order = UltraFastOrder {
+        let order = ExampleOrder {
             id: order_id,
             symbol_id,
             side: if signal.signal_type == "BUY" { 0 } else { 1 },
@@ -142,7 +142,7 @@ impl UltraFastOrderManager {
 
         // 6. ULTRA-FAST SUBMISSION SIMULATION (~5μs)
         // In real implementation: direct system call, kernel bypass, etc.
-        self.ultra_fast_submit(&order);
+        self.submit_order(&order);
 
         // 7. UPDATE POSITION (atomic operation)
         let new_pos_fixed = ((current_pos + signal.target_size) * 1000.0) as u64;
@@ -157,7 +157,7 @@ impl UltraFastOrderManager {
     }
 
     #[inline(always)]
-    fn ultra_fast_submit(&self, _order: &UltraFastOrder) {
+    fn submit_order(&self, _order: &ExampleOrder) {
         // Simulate order submission
         // Real implementation would use:
         // - Kernel bypass networking (DPDK)
@@ -243,14 +243,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .with_max_level(Level::INFO)
         .init();
 
-    println!("🚀 ULTRA-FAST ORDER MANAGEMENT TEST");
+    println!("Order management test");
     println!("===================================");
-    println!("🎯 Target: <100μs (vs 544μs baseline)");
+    println!("Recording order-processing times");
     println!("⚡ Zero-allocation, cache-friendly implementation");
 
-    let order_manager = UltraFastOrderManager::new();
+    let order_manager = ExampleOrderManager::new();
 
-    println!("\n⚡ ULTRA-OPTIMIZATION FEATURES:");
+    println!("\nOptimization features:");
     println!("===============================");
     println!("✅ Pre-mapped symbol IDs (hash map → array lookup)");
     println!("✅ Fixed-size arrays (no dynamic allocation)");
@@ -264,12 +264,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut successful_orders = 0;
     let mut failed_orders = 0;
 
-    println!("\n🏃 RUNNING ULTRA-FAST PROCESSING TEST");
+    println!("\nRunning processing test");
     println!("====================================");
     println!("📊 Test Orders: {}", test_count);
-    println!("🎯 Target: <100μs average");
+    println!("Recording average processing time");
 
-    info!("🚀 Starting ultra-fast order processing test...");
+    info!("Starting order processing test...");
 
     let test_start = Instant::now();
 
@@ -291,7 +291,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             timestamp: chrono::Utc::now().timestamp_millis() as u64,
         };
 
-        match order_manager.create_ultra_fast_order(&signal) {
+        match order_manager.create_order(&signal) {
             Ok((_, processing_time)) => {
                 processing_times.push(processing_time);
                 successful_orders += 1;
@@ -320,9 +320,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         &order_manager,
     );
 
-    println!("\n🎉 ULTRA-FAST ORDER MANAGEMENT TEST COMPLETED");
+    println!("\nOrder management test completed");
     println!("============================================");
-    info!("📈 Ultra-optimized order processing validated");
+    info!("Order processing times recorded");
 
     Ok(())
 }
@@ -333,9 +333,9 @@ fn analyze_ultra_fast_performance(
     total_time: Duration,
     processing_times: &[Duration],
     throughput: f64,
-    order_manager: &UltraFastOrderManager,
+    order_manager: &ExampleOrderManager,
 ) {
-    println!("\n📊 ULTRA-FAST ORDER PROCESSING ANALYSIS");
+    println!("\nOrder processing analysis");
     println!("=======================================");
 
     // Convert to microseconds for analysis
@@ -351,7 +351,7 @@ fn analyze_ultra_fast_performance(
     let max_time = *times_us.last().unwrap();
     let min_time = *times_us.first().unwrap();
 
-    println!("🚀 ULTRA-FAST PROCESSING RESULTS:");
+    println!("Processing results:");
     println!("├─ Successful Orders: {}", successful_orders);
     println!("├─ Failed Orders: {}", failed_orders);
     println!("├─ Success Rate: {:.1}%", (successful_orders as f64 / (successful_orders + failed_orders) as f64) * 100.0);
@@ -371,7 +371,7 @@ fn analyze_ultra_fast_performance(
     println!("\n🎯 OPTIMIZATION SUCCESS ANALYSIS:");
     println!("=================================");
     println!("📉 Baseline Order Mgmt: {:.0}μs", baseline_time_us);
-    println!("⚡ Ultra-Fast Processing: {:.1}μs", mean_time);
+    println!("Mean processing time: {:.1}μs", mean_time);
     println!("📈 Improvement Factor: {:.1}x FASTER", improvement_factor);
     println!("📊 Latency Reduction: {:.1}%", improvement_percent);
 
@@ -379,12 +379,12 @@ fn analyze_ultra_fast_performance(
     println!("\n🏆 TARGET ACHIEVEMENT ASSESSMENT:");
     println!("=================================");
     if mean_time < 50.0 {
-        println!("🏆 EXCEPTIONAL - Sub-50μs achieved!");
-        println!("✅ Perfect for ultra-high-frequency trading");
+        println!("Results are below 50 μs in this run");
+        println!("Example run complete");
         println!("🚀 Exceeds all performance expectations");
     } else if mean_time < 100.0 {
-        println!("🏆 EXCELLENT - Sub-100μs TARGET ACHIEVED!");
-        println!("✅ Ready for high-frequency algorithmic trading");
+        println!("Results are below 100 μs in this run");
+        println!("Example run complete");
         println!("🎯 Performance target successfully met");
     } else if mean_time < 200.0 {
         println!("✅ VERY GOOD - Sub-200μs performance");
@@ -439,15 +439,15 @@ fn analyze_ultra_fast_performance(
     println!("\n🎯 FINAL OPTIMIZATION VERDICT:");
     println!("==============================");
     if improvement_percent > 80.0 && mean_time < 100.0 {
-        println!("🏆 OPTIMIZATION MISSION ACCOMPLISHED!");
-        println!("✅ Target achieved: {:.0}% improvement", improvement_percent);
+        println!("Optimization checks passed");
+        println!("Improvement vs this example's baseline: {:.0}%", improvement_percent);
         println!("✅ Sub-100μs processing confirmed");
-        println!("🚀 System ready for production HFT deployment");
+        println!("Example run complete");
         println!("💡 Focus can now shift to strategy development");
     } else if improvement_percent > 60.0 {
         println!("✅ MAJOR OPTIMIZATION SUCCESS");
         println!("📈 Significant performance gain: {:.0}%", improvement_percent);
-        println!("🎯 Very close to ultimate performance");
+        println!("Close to this example's tightest time check");
     } else if improvement_percent > 30.0 {
         println!("👍 SOLID OPTIMIZATION PROGRESS");
         println!("📊 Meaningful improvement: {:.0}%", improvement_percent);
@@ -457,12 +457,12 @@ fn analyze_ultra_fast_performance(
         println!("🔧 Review implementation approach");
     }
 
-    // HFT readiness assessment
+    // Latency bucket for this run
     if new_total < 200.0 {
-        println!("\n🎉 HFT TRADING SYSTEM STATUS: ✅ READY");
+        println!("\nExample status: ready");
         println!("=======================================");
-        println!("🏆 Sub-200μs total system latency achieved");
-        println!("✅ Competitive with institutional systems");
-        println!("🚀 Deploy and start algorithmic trading!");
+        println!("Total system latency is below 200 μs in this run");
+        println!("Example run complete");
+        println!("Example run complete");
     }
 }

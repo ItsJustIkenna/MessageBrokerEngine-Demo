@@ -233,7 +233,7 @@ impl Clone for BrokerConfig {
 
 // Lock-free metrics for performance tracking
 #[derive(Debug, Default)]
-pub struct UltraFastMetrics {
+pub struct BrokerMetrics {
     active_connections: AtomicUsize,
     total_connections: AtomicU64,
     rejected_connections: AtomicU64,
@@ -254,7 +254,7 @@ pub struct UltraFastMetrics {
     cache_misses: AtomicU64,
 }
 
-impl UltraFastMetrics {
+impl BrokerMetrics {
     pub fn new() -> Self {
         Self {
             active_connections: AtomicUsize::new(0),
@@ -425,7 +425,7 @@ impl Default for BrokerConfig {
 }
 
 impl BrokerConfig {
-    pub fn ultra_performance() -> Self {
+    pub fn optimized() -> Self {
         Self {
             host: "0.0.0.0".to_string(),
             port: 8080,
@@ -603,7 +603,7 @@ impl Connection {
 // Message broker host with enhancements
 pub struct MessageBrokerHost {
     config: BrokerConfig,
-    metrics: Arc<UltraFastMetrics>,
+    metrics: Arc<BrokerMetrics>,
     is_running: Arc<AtomicBool>,
     connections: Arc<parking_lot::RwLock<std::collections::HashMap<u64, Arc<Connection>>>>,
     connection_counter: Arc<AtomicU64>,
@@ -635,7 +635,7 @@ impl MessageBrokerHost {
 
         Self {
             config,
-            metrics: Arc::new(UltraFastMetrics::new()),
+            metrics: Arc::new(BrokerMetrics::new()),
             is_running: Arc::new(AtomicBool::new(false)),
             connections: Arc::new(parking_lot::RwLock::new(std::collections::HashMap::new())),
             connection_counter: Arc::new(AtomicU64::new(0)),
@@ -646,7 +646,7 @@ impl MessageBrokerHost {
     }
 
     pub async fn start(&self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        host_info!("🚀 Starting Enhanced Ultra-High Performance Message Broker");
+        host_info!("Starting Message Broker");
         host_info!("   WAL Enabled: {}", self.config.enable_wal);
         host_info!("   Flow Control: {:?}", self.config.flow_control_config.strategy);
         host_info!("   Compression: {}", self.config.enable_compression);
@@ -724,7 +724,7 @@ impl MessageBrokerHost {
         connection: Arc<Connection>,
         connections: Arc<parking_lot::RwLock<std::collections::HashMap<u64, Arc<Connection>>>>,
         subscription_manager: Arc<TopicSubscriptionManager>,
-        metrics: Arc<UltraFastMetrics>,
+        metrics: Arc<BrokerMetrics>,
         is_running: Arc<AtomicBool>,
     ) {
         let mut buf_reader = BufReader::new(&mut reader);
@@ -807,7 +807,7 @@ impl MessageBrokerHost {
         reader: &mut BufReader<&mut tokio::net::tcp::OwnedReadHalf>,
         connections: &Arc<parking_lot::RwLock<std::collections::HashMap<u64, Arc<Connection>>>>,
         subscription_manager: &Arc<TopicSubscriptionManager>,
-        metrics: &Arc<UltraFastMetrics>,
+        metrics: &Arc<BrokerMetrics>,
     ) -> Result<(), std::io::Error> {
         // Wire format: [topic_len: u32][topic: bytes][data_len: u32][data: bytes]
         let topic_len = reader.read_u32_le().await? as usize;
@@ -985,7 +985,7 @@ mod tests {
 
     #[test]
     fn test_metrics_recording() {
-        let metrics = UltraFastMetrics::new();
+        let metrics = BrokerMetrics::new();
         metrics.record_message(1000, 512); // 1μs, 512 bytes
         
         let stats = metrics.get_stats();

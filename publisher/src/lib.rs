@@ -57,7 +57,7 @@ fn get_rdtsc() -> u64 {
 
 // Error types for zero-allocation error handling
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub enum UltraFastError {
+pub enum BrokerError {
     QueueFull,
     ConnectionFailed,
     SerializationFailed,
@@ -252,7 +252,7 @@ impl Default for PublisherConfig {
 }
 
 // Main publisher
-pub struct UltraFastPublisher {
+pub struct CorePublisher {
     config: PublisherConfig,
     connection: Arc<tokio::sync::RwLock<Option<TcpStream>>>,
     is_connected: AtomicBool,
@@ -262,7 +262,7 @@ pub struct UltraFastPublisher {
     is_running: AtomicBool,
 }
 
-impl UltraFastPublisher {
+impl CorePublisher {
     pub fn new(config: PublisherConfig) -> Self {
         Self {
             config,
@@ -275,7 +275,7 @@ impl UltraFastPublisher {
         }
     }
 
-    pub async fn connect(&self) -> Result<(), UltraFastError> {
+    pub async fn connect(&self) -> Result<(), BrokerError> {
         let start_time = get_rdtsc();
         
         for attempt in 0..self.config.retry_attempts {
@@ -297,18 +297,18 @@ impl UltraFastPublisher {
             }
         }
         
-        Err(UltraFastError::ConnectionFailed)
+        Err(BrokerError::ConnectionFailed)
     }
 
-    async fn try_connect(&self) -> Result<(), UltraFastError> {
+    async fn try_connect(&self) -> Result<(), BrokerError> {
         let addr = format!("{}:{}", self.config.broker_address, self.config.broker_port);
         
         let stream = tokio::time::timeout(
             self.config.connection_timeout,
             TcpStream::connect(&addr)
         ).await
-        .map_err(|_| UltraFastError::Timeout)?
-        .map_err(|_| UltraFastError::ConnectionFailed)?;
+        .map_err(|_| BrokerError::Timeout)?
+        .map_err(|_| BrokerError::ConnectionFailed)?;
 
         // Configure socket for low latency
         if let Err(e) = stream.set_nodelay(self.config.tcp_nodelay) {
@@ -321,7 +321,7 @@ impl UltraFastPublisher {
         Ok(())
     }
 
-    pub async fn publish_raw(&self, data: Vec<u8>, topic: &str) -> Result<(), UltraFastError> {
+    pub async fn publish_raw(&self, data: Vec<u8>, topic: &str) -> Result<(), BrokerError> {
         self.publish_with_priority(data, topic, MessagePriority::Normal).await
     }
 
@@ -330,9 +330,9 @@ impl UltraFastPublisher {
         data: Vec<u8>, 
         topic: &str, 
         priority: MessagePriority
-    ) -> Result<(), UltraFastError> {
+    ) -> Result<(), BrokerError> {
         if !self.is_connected.load(Ordering::Relaxed) {
-            return Err(UltraFastError::ConnectionFailed);
+            return Err(BrokerError::ConnectionFailed);
         }
 
         let start_time = get_rdtsc();
@@ -357,7 +357,7 @@ impl UltraFastPublisher {
         Ok(())
     }
 
-    pub async fn flush(&self) -> Result<(), UltraFastError> {
+    pub async fn flush(&self) -> Result<(), BrokerError> {
         let mut messages_to_send = Vec::new();
         
         // Collect all pending messages
@@ -391,7 +391,7 @@ impl UltraFastPublisher {
 
                 if let Err(_) = stream.write_all(&buffer).await {
                     self.is_connected.store(false, Ordering::Relaxed);
-                    return Err(UltraFastError::NetworkError);
+                    return Err(BrokerError::NetworkError);
                 }
 
                 let latency = get_rdtsc() - send_start;
@@ -400,16 +400,16 @@ impl UltraFastPublisher {
 
             if let Err(_) = stream.flush().await {
                 self.is_connected.store(false, Ordering::Relaxed);
-                return Err(UltraFastError::NetworkError);
+                return Err(BrokerError::NetworkError);
             }
         } else {
-            return Err(UltraFastError::ConnectionFailed);
+            return Err(BrokerError::ConnectionFailed);
         }
 
         Ok(())
     }
 
-    pub async fn disconnect(&self) -> Result<(), UltraFastError> {
+    pub async fn disconnect(&self) -> Result<(), BrokerError> {
         // Flush any remaining messages
         self.flush().await?;
 
@@ -442,7 +442,7 @@ impl UltraFastPublisher {
     }
 }
 
-impl Drop for UltraFastPublisher {
+impl Drop for CorePublisher {
     fn drop(&mut self) {
         self.is_running.store(false, Ordering::Relaxed);
     }
@@ -450,16 +450,16 @@ impl Drop for UltraFastPublisher {
 
 // Simplified publisher for backward compatibility
 pub struct Publisher {
-    inner: Arc<UltraFastPublisher>,
+    inner: Arc<CorePublisher>,
     rt: Option<tokio::runtime::Runtime>,
 }
 
 impl Publisher {
-    pub fn new(config: PublisherConfig) -> Result<Self, UltraFastError> {
+    pub fn new(config: PublisherConfig) -> Result<Self, BrokerError> {
         let rt = tokio::runtime::Runtime::new()
-            .map_err(|_| UltraFastError::SystemError)?;
+            .map_err(|_| BrokerError::SystemError)?;
         
-        let inner = Arc::new(UltraFastPublisher::new(config));
+        let inner = Arc::new(CorePublisher::new(config));
         
         Ok(Self {
             inner,
@@ -467,17 +467,17 @@ impl Publisher {
         })
     }
 
-    pub fn start(&mut self) -> Result<(), UltraFastError> {
+    pub fn start(&mut self) -> Result<(), BrokerError> {
         if let Some(ref rt) = self.rt {
             rt.block_on(async {
                 self.inner.connect().await
             })
         } else {
-            Err(UltraFastError::SystemError)
+            Err(BrokerError::SystemError)
         }
     }
 
-    pub fn publish_order(&mut self, _topic_idx: usize, order: Order) -> Result<(), UltraFastError> {
+    pub fn publish_order(&mut self, _topic_idx: usize, order: Order) -> Result<(), BrokerError> {
         if let Some(ref rt) = self.rt {
             // Serialize order to bytes (simplified)
             let data = format!("ORDER:{}:{}:{}:{}:{}:{}", 
@@ -488,12 +488,12 @@ impl Publisher {
                 self.inner.publish_raw(data, "orders").await
             })
         } else {
-            Err(UltraFastError::SystemError)
+            Err(BrokerError::SystemError)
         }
     }
 
     /// Generic publish method for protobuf messages (DataEngine compatibility)
-    pub fn publish(&mut self, request: PublishRequest, topic: &str) -> Result<(), UltraFastError> {
+    pub fn publish(&mut self, request: PublishRequest, topic: &str) -> Result<(), BrokerError> {
         if let Some(ref rt) = self.rt {
             rt.block_on(async {
                 if let Some(ref payload) = request.payload {
@@ -502,7 +502,7 @@ impl Publisher {
                             log_debug!(PUBLISHER_LOGGER, "Publishing market message to topic: {}", topic);
                             // Serialize the protobuf message
                             let mut buf = Vec::new();
-                            market_msg.encode(&mut buf).map_err(|_| UltraFastError::SerializationFailed)?;
+                            market_msg.encode(&mut buf).map_err(|_| BrokerError::SerializationFailed)?;
                             
                             // Add topic prefix for routing
                             let message = format!("MARKET:{}:", topic).into_bytes();
@@ -515,7 +515,7 @@ impl Publisher {
                             log_debug!(PUBLISHER_LOGGER, "Publishing portfolio message to topic: {}", topic);
                             // Serialize the protobuf message
                             let mut buf = Vec::new();
-                            portfolio_msg.encode(&mut buf).map_err(|_| UltraFastError::SerializationFailed)?;
+                            portfolio_msg.encode(&mut buf).map_err(|_| BrokerError::SerializationFailed)?;
                             
                             // Add topic prefix for routing
                             let message = format!("PORTFOLIO:{}:", topic).into_bytes();
@@ -527,16 +527,16 @@ impl Publisher {
                         _ => {
                             log_debug!(PUBLISHER_LOGGER, "Publishing generic message to topic: {}", topic);
                             // For other message types, serialize as JSON
-                            let json_data = serde_json::to_vec(&request).map_err(|_| UltraFastError::SerializationFailed)?;
+                            let json_data = serde_json::to_vec(&request).map_err(|_| BrokerError::SerializationFailed)?;
                             self.inner.publish_raw(json_data, topic).await
                         }
                     }
                 } else {
-                    Err(UltraFastError::SerializationFailed)
+                    Err(BrokerError::SerializationFailed)
                 }
             })
         } else {
-            Err(UltraFastError::SystemError)
+            Err(BrokerError::SystemError)
         }
     }
 

@@ -478,13 +478,13 @@ fn analyze_udp_performance(
     // Performance classification
     println!("\n🏆 UDP PERFORMANCE CLASSIFICATION:");
     if mean_send_time < 0.1 {
-        println!("🏆 EXCELLENT - Sub-100μs UDP performance!");
-        println!("✅ Perfect for high-frequency trading");
+        println!("UDP time is below 100 μs in this run");
+        println!("This run is within the example's tightest latency check");
     } else if mean_send_time < 0.5 {
         println!("✅ OUTSTANDING - Sub-500μs performance");
-        println!("✅ Ideal for algorithmic trading");
+        println!("This run is within the example's mid latency check");
     } else if mean_send_time < 1.0 {
-        println!("👍 VERY GOOD - Sub-millisecond performance");
+        println!("Sub-millisecond time in this run");
         println!("✅ Suitable for most trading applications");
     } else {
         println!("📈 IMPROVED - Better than TCP baseline");

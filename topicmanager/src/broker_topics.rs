@@ -19,14 +19,14 @@ use protocol::broker::messages::publish_request::Payload;
 #[allow(unused_macros)]
 macro_rules! uf_info {
     ($fmt:expr $(, $arg:expr)*) => {
-        eprintln!("[INFO] [ultra_fast] {}", format!($fmt $(, $arg)*));
+        eprintln!("[INFO] [topicmanager] {}", format!($fmt $(, $arg)*));
     };
 }
 
 #[allow(unused_macros)]
 macro_rules! uf_warn {
     ($fmt:expr $(, $arg:expr)*) => {
-        eprintln!("[WARN] [ultra_fast] {}", format!($fmt $(, $arg)*));
+        eprintln!("[WARN] [topicmanager] {}", format!($fmt $(, $arg)*));
     };
 }
 
@@ -34,7 +34,7 @@ macro_rules! uf_warn {
 macro_rules! uf_debug {
     ($fmt:expr $(, $arg:expr)*) => {
         #[cfg(debug_assertions)]
-        eprintln!("[DEBUG] [ultra_fast] {}", format!($fmt $(, $arg)*));
+        eprintln!("[DEBUG] [topicmanager] {}", format!($fmt $(, $arg)*));
     };
 }
 
@@ -148,7 +148,7 @@ impl FastMessage {
 }
 
 // High-performance subscriber with connection health tracking
-pub struct UltraFastSubscriber {
+pub struct CoreSubscriber {
     id: u64,
     stream: Arc<TokioMutex<TcpStream>>,
     topics: Vec<FixedTopicName>,
@@ -160,7 +160,7 @@ pub struct UltraFastSubscriber {
     queue: SegQueue<Vec<u8>>, // Lock-free message queue
 }
 
-impl UltraFastSubscriber {
+impl CoreSubscriber {
     pub fn new(id: u64, stream: Arc<TokioMutex<TcpStream>>, topics: Vec<FixedTopicName>) -> Self {
         Self {
             id,
@@ -282,16 +282,16 @@ pub struct SubscriberStats {
 }
 
 // Topic with lock-free subscriber management
-pub struct UltraFastTopic {
+pub struct ManagedTopic {
     name: FixedTopicName,
-    subscribers: RwLock<Vec<Arc<UltraFastSubscriber>>>,
+    subscribers: RwLock<Vec<Arc<CoreSubscriber>>>,
     message_count: CachePadded<AtomicU64>,
     total_bytes: CachePadded<AtomicU64>,
     delivery_errors: CachePadded<AtomicU64>,
     last_message_time: CachePadded<AtomicU64>,
 }
 
-impl UltraFastTopic {
+impl ManagedTopic {
     pub fn new(name: FixedTopicName) -> Self {
         Self {
             name,
@@ -308,7 +308,7 @@ impl UltraFastTopic {
         &self.name
     }
 
-    pub fn add_subscriber(&self, subscriber: Arc<UltraFastSubscriber>) -> Result<(), TopicError> {
+    pub fn add_subscriber(&self, subscriber: Arc<CoreSubscriber>) -> Result<(), TopicError> {
         let mut subs = self.subscribers.write();
         
         if subs.len() >= MAX_SUBSCRIBERS_PER_TOPIC {
@@ -434,9 +434,9 @@ pub trait TopicManagerTrait {
 
 // Topic manager
 pub struct TopicManager {
-    topics: RwLock<HashMap<u64, Arc<UltraFastTopic>>>, // Hash -> Topic mapping
+    topics: RwLock<HashMap<u64, Arc<ManagedTopic>>>, // Hash -> Topic mapping
     topic_names: RwLock<HashMap<String, u64>>,         // Name -> Hash mapping
-    subscribers: RwLock<HashMap<u64, Arc<UltraFastSubscriber>>>, // ID -> Subscriber
+    subscribers: RwLock<HashMap<u64, Arc<CoreSubscriber>>>, // ID -> Subscriber
     next_subscriber_id: CachePadded<AtomicU64>,
     
     // Global metrics
@@ -462,7 +462,7 @@ impl TopicManager {
         }
     }
 
-    fn get_or_create_topic(&self, topic_name: &str) -> Result<Arc<UltraFastTopic>, TopicError> {
+    fn get_or_create_topic(&self, topic_name: &str) -> Result<Arc<ManagedTopic>, TopicError> {
         let fixed_name = FixedTopicName::new(topic_name).ok_or(TopicError::InvalidTopic)?;
         let hash = fixed_name.hash();
 
@@ -487,7 +487,7 @@ impl TopicManager {
             return Err(TopicError::TooManySubscribers);
         }
 
-        let topic = Arc::new(UltraFastTopic::new(fixed_name));
+        let topic = Arc::new(ManagedTopic::new(fixed_name));
         topics.insert(hash, Arc::clone(&topic));
         topic_names.insert(topic_name.to_string(), hash);
         
@@ -498,7 +498,7 @@ impl TopicManager {
     }
 
     #[inline(always)]
-    fn get_topic_by_name(&self, topic_name: &str) -> Option<Arc<UltraFastTopic>> {
+    fn get_topic_by_name(&self, topic_name: &str) -> Option<Arc<ManagedTopic>> {
         let topic_names = self.topic_names.read();
         let hash = topic_names.get(topic_name)?;
         
@@ -560,7 +560,7 @@ impl TopicManagerTrait for TopicManager {
         }
 
         let id = self.next_subscriber_id.fetch_add(1, Ordering::Relaxed);
-        let subscriber = Arc::new(UltraFastSubscriber::new(id, stream, fixed_topics));
+        let subscriber = Arc::new(CoreSubscriber::new(id, stream, fixed_topics));
 
         // Add subscriber to global list
         {

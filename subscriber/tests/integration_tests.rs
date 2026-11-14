@@ -3,7 +3,7 @@ use std::sync::Arc;
 use serial_test::serial;
 
 use subscriber::{
-    UltraFastSubscriber, PerformanceStats, UltraFastMessage, 
+    CoreSubscriber, PerformanceStats, BrokerMessage, 
     ConnectionConfig, Subscriber, MessageHandler
 };
 
@@ -37,7 +37,7 @@ async fn test_performance_stats_operations() {
 
 #[tokio::test]
 async fn test_ultra_fast_message_creation() {
-    let message = UltraFastMessage {
+    let message = BrokerMessage {
         topic: "test-topic".to_string(),
         data: b"Hello, World!".to_vec(),
         timestamp: 1234567890,
@@ -52,7 +52,7 @@ async fn test_ultra_fast_message_creation() {
 
 #[tokio::test]
 async fn test_ultra_fast_message_methods() {
-    let message = UltraFastMessage::new(
+    let message = BrokerMessage::new(
         "method-test".to_string(),
         b"test data".to_vec(),
         100,
@@ -66,7 +66,7 @@ async fn test_ultra_fast_message_methods() {
 
 #[tokio::test]
 async fn test_ultra_fast_message_data_integrity() {
-    let message = UltraFastMessage {
+    let message = BrokerMessage {
         topic: "integrity-test".to_string(),
         data: vec![0, 1, 2, 3, 4, 5, 255],
         timestamp: u64::MAX,
@@ -82,7 +82,7 @@ async fn test_ultra_fast_message_data_integrity() {
 #[tokio::test]
 #[serial]
 async fn test_ultra_fast_subscriber_creation() {
-    let _subscriber = UltraFastSubscriber::new(42);
+    let _subscriber = CoreSubscriber::new(42);
     
     // Test subscriber creation doesn't panic
     assert!(true); // Placeholder - subscriber created successfully
@@ -194,7 +194,7 @@ async fn test_message_handler_trait() {
     struct TestHandler;
     
     impl MessageHandler for TestHandler {
-        fn handle_message(&self, topic: &str, data: &[u8]) -> Result<(), subscriber::UltraFastError> {
+        fn handle_message(&self, topic: &str, data: &[u8]) -> Result<(), subscriber::BrokerError> {
             // Simple test implementation
             assert!(!topic.is_empty());
             assert!(!data.is_empty());
@@ -211,7 +211,7 @@ async fn test_message_handler_trait() {
 
 #[tokio::test]
 async fn test_ultra_fast_message_properties() {
-    let original = UltraFastMessage {
+    let original = BrokerMessage {
         topic: "property-test".to_string(),
         data: b"test data".to_vec(),
         timestamp: 987654321,
@@ -289,7 +289,7 @@ async fn test_memory_usage_patterns() {
     let mut messages = Vec::new();
     
     for i in 0..1000 {
-        let message = UltraFastMessage {
+        let message = BrokerMessage {
             topic: format!("topic_{}", i % 10),
             data: vec![i as u8; (i % 100) + 1],
             timestamp: i as u64,
