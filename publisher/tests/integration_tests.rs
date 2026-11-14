@@ -2,7 +2,7 @@ use std::time::Duration;
 use serial_test::serial;
 
 use publisher::{
-    UltraFastPublisher, PublisherConfig, PerformanceStats, MessagePriority, 
+    CorePublisher, PublisherConfig, PerformanceStats, MessagePriority, 
     Publisher, Order, PendingMessage
 };
 
@@ -127,7 +127,7 @@ async fn test_ultra_fast_publisher_creation() {
         .with_batch_size(50)
         .with_tcp_nodelay(true);
     
-    let publisher = UltraFastPublisher::new(config);
+    let publisher = CorePublisher::new(config);
     
     // Test performance stats retrieval
     let (messages_sent, avg_latency, total_bytes, peak_throughput, connection_failures, queue_depth) = 
@@ -145,7 +145,7 @@ async fn test_ultra_fast_publisher_creation() {
 #[serial]
 async fn test_ultra_fast_publisher_stats_reset() {
     let config = PublisherConfig::new("127.0.0.1:8080");
-    let publisher = UltraFastPublisher::new(config);
+    let publisher = CorePublisher::new(config);
     
     // Reset stats (should work without errors)
     publisher.reset_performance_stats();

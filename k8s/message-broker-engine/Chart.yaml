@@ -13,7 +13,7 @@ maintainers:
 keywords:
   - trading
   - message-broker
-  - high-performance
+  - tcp
   - rust
   - microservices
   - real-time

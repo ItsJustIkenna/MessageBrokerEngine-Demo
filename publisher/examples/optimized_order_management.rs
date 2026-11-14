@@ -40,7 +40,7 @@ pub struct OptimizedOrderManager {
     order_pool: OrderPool,
     
     // Cache-friendly risk management
-    risk_manager: UltraFastRiskManager,
+    risk_manager: ExampleRiskManager,
     
     // Pre-computed validation tables
     validation_cache: ValidationCache,
@@ -67,7 +67,7 @@ pub struct OrderPool {
 }
 
 #[derive(Debug)]
-pub struct UltraFastRiskManager {
+pub struct ExampleRiskManager {
     // Pre-computed risk limits for instant validation
     position_limits: HashMap<String, f64>,
     exposure_cache: Arc<RwLock<HashMap<String, f64>>>,
@@ -160,14 +160,14 @@ pub struct OrderManagementStats {
 
 impl OptimizedOrderManager {
     pub fn new(config: OptimizedOrderConfig) -> Self {
-        info!("🚀 Initializing Ultra-Low Latency Order Manager");
-        info!("🎯 Target: <100μs order processing");
+        info!("Initializing order manager");
+        info!("Recording order-processing times");
         
         // Initialize order pool with pre-allocated orders
         let order_pool = OrderPool::new(1000); // Pre-allocate 1000 orders
         
         // Setup risk manager
-        let risk_manager = UltraFastRiskManager::new();
+        let risk_manager = ExampleRiskManager::new();
         
         // Pre-compute validation cache
         let validation_cache = ValidationCache::new();
@@ -208,7 +208,7 @@ impl OptimizedOrderManager {
 
         // 2. LIGHTNING-FAST RISK CHECKS (target: <20μs)
         let risk_start = Instant::now();
-        let risk_result = self.risk_manager.ultra_fast_risk_check(signal, symbol_info)?;
+        let risk_result = self.risk_manager.risk_check(signal, symbol_info)?;
         let _risk_time = risk_start.elapsed();
 
         // 3. ZERO-ALLOCATION ORDER CREATION (target: <30μs)
@@ -399,7 +399,7 @@ struct RiskCheckResult {
     max_allowed_size: f64,
 }
 
-impl UltraFastRiskManager {
+impl ExampleRiskManager {
     fn new() -> Self {
         let mut position_limits = HashMap::new();
         
@@ -423,7 +423,7 @@ impl UltraFastRiskManager {
         }
     }
     
-    fn ultra_fast_risk_check(&self, signal: &TradingSignal, symbol_info: &SymbolInfo) -> Result<RiskCheckResult, Box<dyn std::error::Error>> {
+    fn risk_check(&self, signal: &TradingSignal, symbol_info: &SymbolInfo) -> Result<RiskCheckResult, Box<dyn std::error::Error>> {
         // Validation using pre-computed values and atomic operations
         
         // 1. Basic validation (few CPU cycles)
@@ -520,8 +520,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("🚀 OPTIMIZED ORDER MANAGEMENT PERFORMANCE TEST");
     println!("==============================================");
-    println!("🎯 Target: Reduce 544μs to <100μs (80% improvement)");
-    println!("⚡ Focus: Ultra-low latency order processing");
+    println!("Recording order-processing times");
+    println!("Focus: order processing time");
 
     // Initialize optimized order manager
     let config = OptimizedOrderConfig::default();
@@ -542,7 +542,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n🏃 RUNNING OPTIMIZED ORDER PROCESSING TEST");
     println!("==========================================");
     println!("📈 Test Signals: {}", test_signals);
-    println!("🎯 Target: <100μs average processing time");
+    println!("Recording average processing time");
 
     info!("🚀 Starting optimized order management test...");
 
@@ -592,7 +592,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("\n🎉 OPTIMIZED ORDER MANAGEMENT TEST COMPLETED");
     println!("============================================");
-    info!("📈 Ultra-low latency order processing validated");
+    info!("Order processing times recorded");
 
     Ok(())
 }
@@ -644,11 +644,11 @@ fn analyze_optimized_performance(
     // Performance classification
     println!("\n🏆 ORDER MANAGEMENT OPTIMIZATION RESULTS:");
     if mean_time < 100.0 {
-        println!("🏆 EXCELLENT - Sub-100μs target achieved!");
-        println!("✅ Ready for ultra-high-frequency trading");
+        println!("Results are below 100 μs in this run");
+        println!("Example run complete");
     } else if mean_time < 200.0 {
         println!("✅ VERY GOOD - Sub-200μs performance");
-        println!("✅ Suitable for high-frequency trading");
+        println!("Example run complete");
     } else if mean_time < 300.0 {
         println!("👍 GOOD - Sub-300μs performance");
         println!("📈 Significant improvement over baseline");
@@ -691,13 +691,13 @@ fn analyze_optimized_performance(
     println!("\n🎯 OPTIMIZATION SUCCESS ASSESSMENT:");
     println!("===================================");
     if improvement_percent > 80.0 && mean_time < 100.0 {
-        println!("🏆 OPTIMIZATION SUCCESS - All targets exceeded!");
-        println!("🚀 Ready for production deployment");
-        println!("✅ Ultra-high-frequency trading capability achieved");
+        println!("All recorded checks passed");
+        println!("Example run complete");
+        println!("Example run complete");
     } else if improvement_percent > 60.0 {
         println!("✅ SIGNIFICANT OPTIMIZATION SUCCESS");
         println!("📈 Major performance improvement achieved");
-        println!("🎯 Consider fine-tuning for ultimate performance");
+        println!("Consider further tuning if needed");
     } else if improvement_percent > 30.0 {
         println!("👍 GOOD OPTIMIZATION RESULTS");
         println!("📊 Meaningful improvement achieved");

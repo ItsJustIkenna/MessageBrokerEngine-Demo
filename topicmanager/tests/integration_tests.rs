@@ -51,7 +51,7 @@ fn test_ultra_fast_subscriber_creation() {
         // Connect to create a TcpStream
         let stream = tokio::net::TcpStream::connect(addr).await.unwrap();
         
-        let subscriber = UltraFastSubscriber::new(1, stream);
+        let subscriber = CoreSubscriber::new(1, stream);
         assert_eq!(subscriber.get_id(), 1);
         assert!(subscriber.is_active());
     });
@@ -60,7 +60,7 @@ fn test_ultra_fast_subscriber_creation() {
 #[tokio::test]
 async fn test_ultra_fast_topic_creation() {
     let topic_name = FixedTopicName::new("test-topic").unwrap();
-    let topic = UltraFastTopic::new(topic_name);
+    let topic = ManagedTopic::new(topic_name);
     assert_eq!(topic.get_name().as_str(), "test-topic");
 }
 
@@ -157,7 +157,7 @@ fn test_topic_manager_metrics_maximum_values() {
 
 #[test]
 fn test_topic_manager_creation() {
-    let manager = UltraFastTopicManager::new();
+    let manager = BrokerTopicManager::new();
     let metrics = manager.get_metrics();
     
     assert_eq!(metrics.topic_count, 0);
@@ -243,7 +243,7 @@ fn test_topic_name_size_limit() {
 
 #[tokio::test]
 async fn test_ultra_fast_topic_manager_operations() {
-    let manager = UltraFastTopicManager::new();
+    let manager = BrokerTopicManager::new();
     
     // Test initial state
     let initial_metrics = manager.get_metrics();
@@ -279,7 +279,7 @@ fn test_subscriber_lifecycle() {
         let addr = listener.local_addr().unwrap();
         
         let stream = tokio::net::TcpStream::connect(addr).await.unwrap();
-        let subscriber = UltraFastSubscriber::new(42, stream);
+        let subscriber = CoreSubscriber::new(42, stream);
         
         assert_eq!(subscriber.get_id(), 42);
         assert!(subscriber.is_active());
@@ -293,7 +293,7 @@ fn test_subscriber_lifecycle() {
 
 #[test]
 fn test_topic_manager_basic_functionality() {
-    let manager = UltraFastTopicManager::new();
+    let manager = BrokerTopicManager::new();
     
     // Test that we can create the manager and get metrics
     let metrics = manager.get_metrics();

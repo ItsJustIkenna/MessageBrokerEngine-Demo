@@ -2,10 +2,10 @@
 use std::sync::Arc;
 use std::time::Instant;
 
-use publisher::{UltraFastPublisher, UltraFastPublisherConfig};
-use subscriber::{UltraFastSubscriber, UltraFastSubscriberConfig, MessageHandler, FixedTopic, UltraFastError};
+use publisher::{CorePublisher, CorePublisherConfig};
+use subscriber::{CoreSubscriber, CoreSubscriberConfig, MessageHandler, FixedTopic, BrokerError};
 use hostbuilder::{MessageBrokerHost, BrokerConfig};
-use topicmanager::UltraFastTopicManager;
+use topicmanager::BrokerTopicManager;
 use protocol::broker::messages::{Orders, Trades, Order, Trade};
 
 struct TestMessageHandler {
@@ -43,7 +43,7 @@ impl MessageHandler for TestMessageHandler {
                  latency_ns, latency_ns as f64 / 1000.0);
     }
 
-    fn handle_error(&self, error: UltraFastError, topic: &FixedTopic) {
+    fn handle_error(&self, error: BrokerError, topic: &FixedTopic) {
         eprintln!("❌ Error handling message on topic '{}': {:?}", topic.as_str(), error);
     }
 }
@@ -55,7 +55,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .with_max_level(tracing::Level::INFO)
         .init();
 
-    println!("🚀 ULTRA-HIGH PERFORMANCE MESSAGE BROKER VALIDATION TEST 🚀");
+    println!("Message Broker validation test");
     println!("═══════════════════════════════════════════════════════════════");
 
     // Test 1: Cross-platform compatibility
@@ -65,15 +65,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Test 2: Publisher creation and basic functionality
     println!("\n📋 Test 2: Publisher Performance");
-    let pub_config = UltraFastPublisherConfig::default();
-    let mut publisher = UltraFastPublisher::new(pub_config)?;
+    let pub_config = CorePublisherConfig::default();
+    let mut publisher = CorePublisher::new(pub_config)?;
     publisher.start()?;
 
     let orders = Orders {
         orders: vec![Order {
-            unique_id: "ULTRA_FAST_001".to_string(),
+            unique_id: "TEST_001".to_string(),
             symbol: "BTCUSD".to_string(),
-            exchange: "ULTRA_EXCHANGE".to_string(),
+            exchange: "TEST_EXCHANGE".to_string(),
             price_level: 50000.0,
             quantity: 1.0,
             side: "BUY".to_string(),
@@ -83,7 +83,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let start_time = Instant::now();
     for i in 0..1000 {
-        publisher.publish_orders(&orders, "ultra_fast_orders")?;
+        publisher.publish_orders(&orders, "example_orders")?;
         if i % 100 == 0 {
             println!("   Published {} orders...", i + 1);
         }
@@ -98,12 +98,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Test 3: Subscriber performance
     println!("\n📋 Test 3: Subscriber Performance");
-    let sub_config = UltraFastSubscriberConfig {
+    let sub_config = CoreSubscriberConfig {
         topics: vec!["orders".to_string(), "trades".to_string()],
         ..Default::default()
     };
     
-    let mut subscriber = UltraFastSubscriber::new(sub_config)?;
+    let mut subscriber = CoreSubscriber::new(sub_config)?;
     let handler = Arc::new(TestMessageHandler::new());
     subscriber.start(Arc::clone(&handler))?;
 
@@ -125,11 +125,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Test 4: Topic Manager performance
     println!("\n📋 Test 4: Topic Manager Performance");
-    let topic_manager = UltraFastTopicManager::new();
+    let topic_manager = BrokerTopicManager::new();
     
     let start_time = Instant::now();
     for i in 0..1000 {
-        let topic_name = format!("ultra_topic_{}", i);
+        let topic_name = format!("test_topic_{}", i);
         topic_manager.create_topic(&topic_name).await?;
     }
     let topic_creation_duration = start_time.elapsed();
@@ -179,10 +179,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut score = 0;
     
     if publisher_throughput > 10000.0 {
-        println!("✅ Publisher Throughput: EXCELLENT (>10K/s)");
+        println!("Publisher throughput is above 10,000 messages/s in this run");
         score += 3;
     } else if publisher_throughput > 1000.0 {
-        println!("🟡 Publisher Throughput: GOOD (>1K/s)");
+        println!("Publisher throughput is above 1,000 messages/s in this run");
         score += 2;
     } else {
         println!("🔴 Publisher Throughput: NEEDS IMPROVEMENT");
@@ -190,13 +190,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     if subscriber_latency_us < 1.0 {
-        println!("✅ Subscriber Latency: ULTRA-FAST (<1μs)");
+        println!("Subscriber latency in the fastest bucket");
         score += 4;
     } else if subscriber_latency_us < 10.0 {
-        println!("🟡 Subscriber Latency: FAST (<10μs)");
+        println!("Subscriber latency in the <10 μs bucket in this run");
         score += 3;
     } else if subscriber_latency_us < 100.0 {
-        println!("🟡 Subscriber Latency: GOOD (<100μs)");
+        println!("Subscriber latency in the mid bucket");
         score += 2;
     } else {
         println!("🔴 Subscriber Latency: NEEDS IMPROVEMENT");
@@ -204,10 +204,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     if topic_creation_speed > 1000.0 {
-        println!("✅ Topic Creation: EXCELLENT (>1K/s)");
+        println!("Topic creation is above 1,000 topics/s in this run");
         score += 3;
     } else if topic_creation_speed > 100.0 {
-        println!("🟡 Topic Creation: GOOD (>100/s)");
+        println!("Topic creation is above 100 topics/s in this run");
         score += 2;
     } else {
         println!("🔴 Topic Creation: NEEDS IMPROVEMENT");
@@ -219,23 +219,23 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     
     match score {
         9..=10 => {
-            println!("🏆 OUTSTANDING! Ultra-High Performance Message Broker");
-            println!("🚀 Ready for sub-microsecond latency trading platforms!");
+            println!("Validation finished");
+            println!("See measured loopback TCP throughput in the README.");
         }
         7..=8 => {
-            println!("🥈 EXCELLENT! High Performance Message Broker");
-            println!("⚡ Suitable for high-frequency trading applications!");
+            println!("Score in the upper-middle band");
+            println!("See measured loopback TCP throughput in the README.");
         }
         5..=6 => {
-            println!("🥉 GOOD! Standard Performance Message Broker");
-            println!("📈 Good for general trading applications!");
+            println!("Score in the middle band");
+            println!("See measured loopback TCP throughput in the README.");
         }
         _ => {
             println!("⚠️  Performance needs optimization for trading workloads");
         }
     }
 
-    println!("\n✅ Ultra-High Performance Message Broker validation completed!");
+    println!("\nValidation completed.");
     println!("═══════════════════════════════════════════════════");
 
     Ok(())

@@ -40,7 +40,7 @@ fn get_rdtsc() -> u64 {
 
 // Error types for zero-allocation error handling
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub enum UltraFastError {
+pub enum BrokerError {
     QueueFull,
     ConnectionFailed,
     DeserializationFailed,
@@ -139,14 +139,14 @@ impl PerformanceStats {
 }
 
 // Message structure for processing
-pub struct UltraFastMessage {
+pub struct BrokerMessage {
     pub topic: String,
     pub data: Vec<u8>,
     pub timestamp: u64,
     pub sequence: u64,
 }
 
-impl UltraFastMessage {
+impl BrokerMessage {
     pub fn new(topic: String, data: Vec<u8>, sequence: u64) -> Self {
         Self {
             topic,
@@ -175,20 +175,20 @@ impl UltraFastMessage {
 
 // Message handler trait for processing incoming messages
 pub trait MessageHandler: Send + Sync {
-    fn handle_message(&self, topic: &str, data: &[u8]) -> Result<(), UltraFastError>;
+    fn handle_message(&self, topic: &str, data: &[u8]) -> Result<(), BrokerError>;
 }
 
 // Main subscriber
-pub struct UltraFastSubscriber {
+pub struct CoreSubscriber {
     subscriber_id: u64,
-    subscribed_topics: Arc<RwLock<HashMap<String, Arc<SegQueue<UltraFastMessage>>>>>,
+    subscribed_topics: Arc<RwLock<HashMap<String, Arc<SegQueue<BrokerMessage>>>>>,
     is_running: AtomicBool,
     performance_stats: Arc<PerformanceStats>,
     last_heartbeat: AtomicU64,
     messages_received: AtomicU64,
 }
 
-impl Clone for UltraFastSubscriber {
+impl Clone for CoreSubscriber {
     fn clone(&self) -> Self {
         Self {
             subscriber_id: self.subscriber_id,
@@ -201,7 +201,7 @@ impl Clone for UltraFastSubscriber {
     }
 }
 
-impl UltraFastSubscriber {
+impl CoreSubscriber {
     pub fn new(subscriber_id: u64) -> Self {
         Self {
             subscriber_id,
@@ -213,7 +213,7 @@ impl UltraFastSubscriber {
         }
     }
 
-    pub async fn subscribe_to_topic(&self, topic_name: &str) -> Result<(), UltraFastError> {
+    pub async fn subscribe_to_topic(&self, topic_name: &str) -> Result<(), BrokerError> {
         let mut topics = self.subscribed_topics.write();
         
         if !topics.contains_key(topic_name) {
@@ -223,7 +223,7 @@ impl UltraFastSubscriber {
         Ok(())
     }
 
-    pub async fn unsubscribe_from_topic(&self, topic_name: &str) -> Result<(), UltraFastError> {
+    pub async fn unsubscribe_from_topic(&self, topic_name: &str) -> Result<(), BrokerError> {
         let mut topics = self.subscribed_topics.write();
         topics.remove(topic_name);
         Ok(())
@@ -235,7 +235,7 @@ impl UltraFastSubscriber {
     }
 
     #[inline(always)]
-    pub fn get_message_from_topic(&self, topic_name: &str) -> Option<UltraFastMessage> {
+    pub fn get_message_from_topic(&self, topic_name: &str) -> Option<BrokerMessage> {
         let topics = self.subscribed_topics.read();
         if let Some(queue) = topics.get(topic_name) {
             if let Some(message) = queue.pop() {
@@ -307,7 +307,7 @@ impl UltraFastSubscriber {
     }
 }
 
-impl Drop for UltraFastSubscriber {
+impl Drop for CoreSubscriber {
     fn drop(&mut self) {
         self.stop();
     }
@@ -367,16 +367,16 @@ impl ConnectionConfig {
 // Subscriber with simplified interface for backward compatibility
 #[derive(Clone)]
 pub struct Subscriber {
-    inner: UltraFastSubscriber,
+    inner: CoreSubscriber,
     #[allow(dead_code)]
     config: ConnectionConfig,
     topics: Vec<String>,
 }
 
 impl Subscriber {
-    pub fn new(config: ConnectionConfig, topics: &[&str]) -> Result<Self, UltraFastError> {
+    pub fn new(config: ConnectionConfig, topics: &[&str]) -> Result<Self, BrokerError> {
         let subscriber_id = get_rdtsc(); // Use timestamp as unique ID
-        let inner = UltraFastSubscriber::new(subscriber_id);
+        let inner = CoreSubscriber::new(subscriber_id);
         
         Ok(Self {
             inner,
@@ -385,7 +385,7 @@ impl Subscriber {
         })
     }
 
-    pub fn start(&mut self) -> Result<(), UltraFastError> {
+    pub fn start(&mut self) -> Result<(), BrokerError> {
         // Subscribe to all topics
         for _topic in &self.topics {
             // In a real implementation, this would establish network connections
@@ -400,7 +400,7 @@ impl Subscriber {
         self.topics.iter().position(|t| t == topic)
     }
 
-    pub fn get_message(&self, topic_idx: usize) -> Option<UltraFastMessage> {
+    pub fn get_message(&self, topic_idx: usize) -> Option<BrokerMessage> {
         if let Some(topic) = self.topics.get(topic_idx) {
             self.inner.get_message_from_topic(topic)
         } else {
@@ -413,7 +413,7 @@ impl Subscriber {
     }
 
     // Additional methods needed by portfoliohandler
-    pub fn poll_all_messages(&self, max_messages: usize) -> Vec<(usize, UltraFastMessage)> {
+    pub fn poll_all_messages(&self, max_messages: usize) -> Vec<(usize, BrokerMessage)> {
         let mut messages = Vec::new();
         
         for (idx, topic) in self.topics.iter().enumerate() {
@@ -429,7 +429,7 @@ impl Subscriber {
         messages
     }
 
-    pub fn get_health_metrics(&self) -> Result<HealthMetrics, UltraFastError> {
+    pub fn get_health_metrics(&self) -> Result<HealthMetrics, BrokerError> {
         Ok(HealthMetrics {
             connected: self.inner.is_running(),
             error_count: 0, // Could track actual errors if implemented
@@ -446,7 +446,7 @@ impl Subscriber {
         current_time.saturating_sub(last_heartbeat) > max_age_ns
     }
 
-    pub fn reconnect(&mut self) -> Result<(), UltraFastError> {
+    pub fn reconnect(&mut self) -> Result<(), BrokerError> {
         // In a real implementation, this would reconnect to the broker
         self.inner.stop();
         self.inner.start();

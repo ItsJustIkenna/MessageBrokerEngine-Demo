@@ -214,11 +214,11 @@ fn analyze_optimization_results(
     // Performance classification
     println!("\n🏆 PERFORMANCE CLASSIFICATION:");
     if mean_latency < target_latency_ms {
-        println!("🏆 EXCELLENT - Target achieved! (<{:.1}ms)", target_latency_ms);
-        println!("✅ Ready for high-frequency algorithmic trading");
+        println!("Within this example's target (<{:.1}ms)", target_latency_ms);
+        println!("This run is within the example's tightest latency check");
     } else if mean_latency < 1.0 {
-        println!("✅ VERY GOOD - Sub-millisecond latency achieved");
-        println!("✅ Suitable for most algorithmic trading strategies");
+        println!("Sub-millisecond latency in this run");
+        println!("This run is within the example's mid latency check");
     } else if mean_latency < 5.0 {
         println!("👍 GOOD - Significant improvement over baseline");
         println!("⚠️  May require additional optimization for HFT");
@@ -255,8 +255,8 @@ fn analyze_optimization_results(
     // Final assessment
     println!("\n🎯 FINAL ASSESSMENT:");
     if mean_latency < target_latency_ms && improvement_percent > 90.0 {
-        println!("🏆 OPTIMIZATION SUCCESS - All targets exceeded");
-        println!("🚀 Ready for production deployment");
+        println!("All recorded checks passed");
+        println!("Example run complete");
     } else if improvement_percent > 50.0 {
         println!("✅ OPTIMIZATION EFFECTIVE - Significant improvements");
         println!("📈 Consider additional fine-tuning");
