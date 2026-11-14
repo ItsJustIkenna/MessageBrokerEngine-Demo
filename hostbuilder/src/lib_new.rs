@@ -140,7 +140,7 @@ impl Clone for BrokerConfig {
 // Cache-line aligned to prevent false sharing (64-byte cache lines on x86_64)
 #[repr(align(64))]
 #[derive(Debug)]
-pub struct BrokerMetrics {
+pub struct LockFreeMetrics {
     // Each atomic on its own cache line to prevent false sharing
     active_connections: AtomicUsize,
     _pad1: [u8; 64 - std::mem::size_of::<AtomicUsize>()],
@@ -185,7 +185,7 @@ pub struct BrokerMetrics {
     _pad14: [u8; 56],
 }
 
-impl Default for BrokerMetrics {
+impl Default for LockFreeMetrics {
     fn default() -> Self {
         Self {
             active_connections: AtomicUsize::new(0),
@@ -220,7 +220,7 @@ impl Default for BrokerMetrics {
     }
 }
 
-impl BrokerMetrics {
+impl LockFreeMetrics {
     pub fn new() -> Self {
         Self {
             active_connections: AtomicUsize::new(0),
@@ -357,7 +357,7 @@ impl Connection {
 // Message broker host with enhancements
 pub struct MessageBrokerHost {
     config: BrokerConfig,
-    metrics: Arc<BrokerMetrics>,
+    metrics: Arc<LockFreeMetrics>,
     is_running: Arc<AtomicBool>,
     connections: Arc<parking_lot::RwLock<std::collections::HashMap<u64, Connection>>>,
     connection_counter: Arc<AtomicU64>,
@@ -385,7 +385,7 @@ impl MessageBrokerHost {
 
         Self {
             config,
-            metrics: Arc::new(BrokerMetrics::new()),
+            metrics: Arc::new(LockFreeMetrics::new()),
             is_running: Arc::new(AtomicBool::new(false)),
             connections: Arc::new(parking_lot::RwLock::new(std::collections::HashMap::new())),
             connection_counter: Arc::new(AtomicU64::new(0)),
@@ -472,7 +472,7 @@ mod tests {
 
     #[test]
     fn test_metrics_recording() {
-        let metrics = BrokerMetrics::new();
+        let metrics = LockFreeMetrics::new();
         metrics.record_message(1000, 512); // 1μs, 512 bytes
         
         let stats = metrics.get_stats();
