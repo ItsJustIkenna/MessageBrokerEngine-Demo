@@ -40,7 +40,7 @@ impl UltraProductionBroker {
         info!("⚡ Ultra-Fast Production Broker started with UDP optimization simulation");
         info!("� Expected performance: 12μs latency (99.9% improvement over TCP)");
         
-        // Simulate ultra-fast message processing
+        // Simulate message processing
         tokio::time::sleep(tokio::time::Duration::from_secs(10)).await;
         
         info!("✅ Ultra-Fast Production Broker completed demonstration");
@@ -56,7 +56,7 @@ impl UltraProductionBroker {
         self.messages_processed.fetch_add(1, Ordering::Relaxed);
         self.bytes_processed.fetch_add(message.payload.len() as u64, Ordering::Relaxed);
         
-        // Log every 1000 messages to show ultra-fast processing
+        // Log every 1000 messages to show processing
         let count = self.messages_processed.load(Ordering::Relaxed);
         if count % 1000 == 0 {
             info!("⚡ Ultra-fast published: {} messages to topic {}", count, message.topic);

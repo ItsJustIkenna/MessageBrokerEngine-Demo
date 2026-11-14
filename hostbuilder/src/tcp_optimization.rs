@@ -1,4 +1,4 @@
-// Advanced TCP socket optimization for ultra-low latency
+// Advanced TCP socket optimization for low latency
 // Provides comprehensive TCP tuning beyond basic TCP_NODELAY
 
 use tokio::net::TcpStream;
@@ -53,7 +53,7 @@ impl Default for TcpOptimizationConfig {
     }
 }
 
-/// Create an optimized TCP socket with ultra-low latency settings
+/// Create an optimized TCP socket with low-latency settings
 pub async fn create_optimized_socket(
     addr: SocketAddr,
     config: &TcpOptimizationConfig,

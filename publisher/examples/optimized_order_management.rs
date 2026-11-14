@@ -1,5 +1,5 @@
-// Ultra-Low Latency Order Management System for SignalEngine
-// Target: Reduce 544μs to <100μs (80% improvement)
+// Low-latency Order Management System for SignalEngine
+// Example order-management path (no measured figure claimed here)
 
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -51,7 +51,7 @@ pub struct OptimizedOrderManager {
     // Performance metrics
     stats: OrderManagementStats,
     
-    // Configuration for ultra-low latency
+    // Configuration for low latency
     config: OptimizedOrderConfig,
 }
 
@@ -166,7 +166,7 @@ impl OptimizedOrderManager {
         // Initialize order pool with pre-allocated orders
         let order_pool = OrderPool::new(1000); // Pre-allocate 1000 orders
         
-        // Setup ultra-fast risk manager
+        // Setup risk manager
         let risk_manager = UltraFastRiskManager::new();
         
         // Pre-compute validation cache
@@ -184,7 +184,7 @@ impl OptimizedOrderManager {
         }
     }
 
-    /// Ultra-fast order creation - TARGET: <100μs
+    /// Order creation
     pub fn create_order_optimized(&mut self, signal: &TradingSignal) -> Result<(Order, Duration), Box<dyn std::error::Error>> {
         let order_start = Instant::now();
 
@@ -229,7 +229,7 @@ impl OptimizedOrderManager {
             }
         };
 
-        // Ultra-fast order population using pre-computed templates
+        // Order population using pre-computed templates
         self.populate_order_optimized(&mut order, signal, &risk_result)?;
         let _creation_time = creation_start.elapsed();
 
@@ -257,7 +257,7 @@ impl OptimizedOrderManager {
         let _template = self.validation_cache.order_templates.get(&signal.symbol)
             .ok_or("No order template")?;
 
-        // Ultra-fast string operations - avoid allocations where possible
+        // String operations - avoid allocations where possible
         order.id = format!("ord_{}_{}", signal.symbol, risk_result.order_sequence);
         order.symbol.clear();
         order.symbol.push_str(&signal.symbol);
@@ -279,7 +279,7 @@ impl OptimizedOrderManager {
         let route = self.validation_cache.exchange_routes.get(&order.symbol)
             .ok_or("No exchange route")?;
 
-        // Simulate ultra-fast order submission
+        // Simulate order submission
         // In reality, this would be FIX protocol with kernel bypass, RDMA, etc.
         let submission_delay = Duration::from_micros(route.latency_estimate_us);
         std::thread::sleep(submission_delay / 10); // Simulate optimized submission
@@ -424,7 +424,7 @@ impl UltraFastRiskManager {
     }
     
     fn ultra_fast_risk_check(&self, signal: &TradingSignal, symbol_info: &SymbolInfo) -> Result<RiskCheckResult, Box<dyn std::error::Error>> {
-        // Ultra-fast validation using pre-computed values and atomic operations
+        // Validation using pre-computed values and atomic operations
         
         // 1. Basic validation (few CPU cycles)
         if signal.target_size <= 0.0 || signal.target_size > self.max_order_size {

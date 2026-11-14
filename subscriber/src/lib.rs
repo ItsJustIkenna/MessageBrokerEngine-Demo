@@ -1,4 +1,4 @@
-// Ultra-high performance subscriber for sub-microsecond latency
+// Subscriber for low latency
 
 #[macro_use]
 pub mod logging_facade;
@@ -11,7 +11,7 @@ use std::collections::HashMap;
 use crossbeam::queue::SegQueue;
 use parking_lot::RwLock;
 
-/// Cross-platform timestamp function optimized for ultra-low latency
+/// Cross-platform timestamp function optimized for low latency
 #[cfg(target_arch = "x86_64")]
 #[inline(always)]
 fn get_rdtsc() -> u64 {
@@ -38,7 +38,7 @@ fn get_rdtsc() -> u64 {
         .as_nanos() as u64
 }
 
-// Ultra-fast error types for zero-allocation error handling
+// Error types for zero-allocation error handling
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum UltraFastError {
     QueueFull,
@@ -68,7 +68,7 @@ impl HealthMetrics {
     }
 }
 
-// Performance statistics for monitoring ultra-low latency
+// Performance statistics
 #[derive(Default)]
 pub struct PerformanceStats {
     messages_processed: AtomicU64,
@@ -138,7 +138,7 @@ impl PerformanceStats {
     }
 }
 
-// Message structure for ultra-fast processing
+// Message structure for processing
 pub struct UltraFastMessage {
     pub topic: String,
     pub data: Vec<u8>,
@@ -178,7 +178,7 @@ pub trait MessageHandler: Send + Sync {
     fn handle_message(&self, topic: &str, data: &[u8]) -> Result<(), UltraFastError>;
 }
 
-// Main ultra-high performance subscriber
+// Main subscriber
 pub struct UltraFastSubscriber {
     subscriber_id: u64,
     subscribed_topics: Arc<RwLock<HashMap<String, Arc<SegQueue<UltraFastMessage>>>>>,
@@ -313,7 +313,7 @@ impl Drop for UltraFastSubscriber {
     }
 }
 
-// Connection configuration for ultra-fast connections
+// Connection configuration for connections
 #[derive(Clone)]
 pub struct ConnectionConfig {
     pub address: String,

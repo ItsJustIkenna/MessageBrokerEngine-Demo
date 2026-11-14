@@ -1,4 +1,4 @@
-// Cross-platform ultra-high performance topic manager
+// Cross-platform topic manager
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, AtomicUsize, AtomicBool, Ordering};
@@ -42,7 +42,7 @@ macro_rules! topic_debug {
     };
 }
 
-// Constants for ultra-low latency
+// Constants for low latency
 const MAX_TOPICS: usize = 10000;
 const MAX_SUBSCRIBERS_PER_TOPIC: usize = 1000;
 const BATCH_SIZE: usize = 128;

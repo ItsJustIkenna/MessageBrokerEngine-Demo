@@ -1,4 +1,4 @@
-// CPU affinity and thread optimization for ultra-low latency
+// CPU affinity and thread optimization for low latency
 // Implements CPU pinning recommendations from latency profiling
 
 use std::thread;

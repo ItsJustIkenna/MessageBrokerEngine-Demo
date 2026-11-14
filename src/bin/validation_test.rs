@@ -1,4 +1,4 @@
-// Quick validation test for the ultra-high performance message broker
+// Quick validation test for the message broker
 use std::sync::Arc;
 use std::time::Instant;
 
@@ -145,7 +145,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         port: 8080,
         max_connections: 1000,
         max_topics: 10000,
-        flush_interval_ms: 1, // 1ms for ultra-low latency
+        flush_interval_ms: 1, // 1ms for low latency
         cpu_affinity: None, // Cross-platform compatibility
         realtime_priority: None, // Cross-platform compatibility
     };

@@ -1,4 +1,4 @@
-// Ultra-fast flow control and backpressure management
+// Flow control and backpressure management
 // Advanced algorithms for message throttling, rate limiting, and adaptive control
 
 use std::sync::Arc;
@@ -85,7 +85,7 @@ pub enum FlowControlDecision {
     RateLimit,
 }
 
-/// Ultra-fast flow control manager
+/// Flow control manager
 pub struct FlowControlManager {
     config: BackpressureConfig,
     permit_semaphore: Arc<Semaphore>,
