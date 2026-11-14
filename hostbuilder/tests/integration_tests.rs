@@ -3,7 +3,7 @@ use std::time::Duration;
 use serial_test::serial;
 
 use hostbuilder::{
-    MessageBrokerHost, BrokerConfig, BrokerMetrics, BrokerMessage, BrokerMetrics
+    MessageBrokerHost, BrokerConfig, LockFreeMetrics, BrokerMessage, BrokerMetrics
 };
 
 #[tokio::test]
@@ -39,7 +39,7 @@ async fn test_broker_config_ultra_performance() {
 
 #[tokio::test]
 async fn test_ultra_fast_metrics_creation() {
-    let metrics = BrokerMetrics::new();
+    let metrics = LockFreeMetrics::new();
     
     let (connections, messages, bytes, errors, rejections, avg_time, cache_hits, cache_misses, peak_memory) = metrics.get_stats();
     
@@ -56,7 +56,7 @@ async fn test_ultra_fast_metrics_creation() {
 
 #[tokio::test]
 async fn test_ultra_fast_metrics_record_operations() {
-    let metrics = BrokerMetrics::new();
+    let metrics = LockFreeMetrics::new();
     
     // Record some operations
     metrics.record_connection();
@@ -204,7 +204,7 @@ async fn test_broker_metrics_display() {
 
 #[tokio::test]
 async fn test_concurrent_metrics_updates() {
-    let metrics = Arc::new(BrokerMetrics::new());
+    let metrics = Arc::new(LockFreeMetrics::new());
     let mut handles = vec![];
     
     // Spawn multiple tasks to update metrics concurrently
@@ -276,7 +276,7 @@ async fn test_broker_config_validation() {
 
 #[tokio::test]
 async fn test_performance_under_load() {
-    let metrics = Arc::new(BrokerMetrics::new());
+    let metrics = Arc::new(LockFreeMetrics::new());
     let start = std::time::Instant::now();
     
     // Simulate high-load scenario
