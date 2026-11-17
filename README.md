@@ -4,11 +4,11 @@
 
 ## Overview
 
-Message broker built in Rust, designed for low-latency publish/subscribe messaging.
+Message broker built in Rust, for publish/subscribe messaging.
 
 ## Performance
 
-Measured on an 8-vCPU VM: 300k+ messages/s over loopback TCP.
+No benchmark results are published for this demo. The Criterion benchmarks in `hostbuilder/benches/` exercise standalone mock queue/message types, not the full broker over a network, so they are not an end-to-end throughput or latency measurement.
 
 ## Features
 
