@@ -1,11 +1,11 @@
 // SIMD acceleration for message processing
-// Provides 2-4x speedup for batch operations using AVX2/AVX-512
+// SIMD batch operations using AVX2/AVX-512 (speedup not benchmarked in this repo)
 
 #[cfg(target_arch = "x86_64")]
 use std::arch::x86_64::*;
 
 /// Copy data using SIMD instructions (AVX2)
-/// Up to 4x faster than memcpy for aligned buffers
+/// Intended for aligned buffers (not benchmarked against memcpy in this repo)
 #[inline(always)]
 pub fn copy_batch_simd(src: &[u8], dst: &mut [u8]) -> usize {
     let len = src.len().min(dst.len());

@@ -106,7 +106,7 @@ impl ExampleOrderManager {
             return Err("Emergency stop active");
         }
 
-        // 3. ULTRA-FAST VALIDATION (~5μs - no string operations!)
+        // 3. Validation (no string operations)
         if signal.target_size <= 0.0 || signal.target_size > 1000.0 {
             return Err("Invalid size");
         }
@@ -140,7 +140,7 @@ impl ExampleOrderManager {
             status: 0, // CREATED
         };
 
-        // 6. ULTRA-FAST SUBMISSION SIMULATION (~5μs)
+        // 6. Submission simulation
         // In real implementation: direct system call, kernel bypass, etc.
         self.submit_order(&order);
 

@@ -177,7 +177,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 
     println!("Message Broker Engine");
     println!("═══════════════════════════════════════════════════════════");
-    println!("Measured: 300k+ messages/s over loopback TCP, 8-vCPU VM");
     println!("🔧 Platform: {} on {}", std::env::consts::ARCH, std::env::consts::OS);
     println!("UDP optimization path included");
     println!("📊 Logging: Ultra-Logger with Elasticsearch transport");

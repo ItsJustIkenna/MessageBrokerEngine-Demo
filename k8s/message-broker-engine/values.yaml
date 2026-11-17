@@ -6,7 +6,7 @@ fullnameOverride: "message-broker-engine"
 
 # Image configuration
 image:
-  repository: prodtradingbotregistry.azurecr.io/message-broker-engine
+  repository: ghcr.io/your-org/message-broker-engine
   pullPolicy: IfNotPresent
   tag: "1.0.0"
 
